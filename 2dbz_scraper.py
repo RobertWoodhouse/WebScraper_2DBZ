@@ -1,18 +1,18 @@
 '''
 2DBZ Web Scraper
 Author: Robert Woodhouse
-Modified: 03/02/2023
+Modified: 27/04/2023
 '''
 
 from selenium import webdriver
 from bs4 import BeautifulSoup
-import re
 import pandas
 import sqlite3
+import json
 
 driver = webdriver.Chrome('/Applications/chromedriver_mac64/chromedriver')
 driver.delete_all_cookies()
-number_of_products = 0
+#number_of_products = 0
 #search_input = input()
 
 def open_browser_soup():
@@ -43,20 +43,44 @@ for post in posts:
     dict["image"] += [image]
     dict["link"] += [link.getText()]
 
-print(dict)
+#breakpoint()
+#print(dict)
+df = pandas.DataFrame(data=dict)
 
+# Convert dictionary to JSON string
+df.to_json('2dbz_posts.json', indent=3, orient='records')
+
+# Open the JSON file
+with open('2dbz_posts.json', 'r') as f:
+    data = json.load(f)
+
+# Connect to the SQLite database (creates the database if it doesn't exist)
+conn = sqlite3.connect('2dbz_database.db')
+
+# Create a cursor object
+cursor = conn.cursor()
+
+# Create the table
+cursor.execute('''CREATE TABLE IF NOT EXISTS twodbz_table
+    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    description TEXT,
+    category TEXT,
+    image TEXT,
+    link TEXT)''')
+
+# Insert the data into the table
+for item in data:
+    cursor.execute('''INSERT INTO twodbz_table (title, description, category, image, link)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (item['title'], item['description'], item['category'], item['image'], item['link']))
+
+# Commit the changes to the database
+conn.commit()
+
+# Close the cursor and connection
+cursor.close()
+conn.close()
+
+# Close the webdriver
 driver.close()
-
-'''
-res = soup.find('div', class_="product-detail small-12 medium-offset-1 medium-11 large-offset-2 large-10")
-title_id = res.find_all('p', class_="title")
-value = res.find('span', class_="price") #TODO stop json from changing char uni code
-brand = res.find('span', class_="base")
-description = res.find('div', class_="description").find('p') #TODO change to find_all list and seperate with /n
-
-product_dict["name"] += [title_id[0].getText()]
-product_dict["sku"] += [title_id[1].getText()]
-product_dict["value"] += [value.getText().replace('\u00a3', '£')]
-product_dict["brand"] += [brand.getText().strip()]
-product_dict["description"] += [description.getText()]
-'''
