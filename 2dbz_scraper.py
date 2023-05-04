@@ -1,7 +1,7 @@
 '''
 2DBZ Web Scraper
 Author: Robert Woodhouse
-Modified: 27/04/2023
+Modified: 04/05/2023
 '''
 
 from selenium import webdriver
@@ -10,9 +10,9 @@ import pandas
 import sqlite3
 import json
 
-driver = webdriver.Chrome('/Applications/chromedriver_mac64/chromedriver')
+driver = webdriver.Chrome('/Applications/WebDrivers/chromedriver')
+
 driver.delete_all_cookies()
-#number_of_products = 0
 #search_input = input()
 
 def open_browser_soup():
@@ -43,11 +43,10 @@ for post in posts:
     dict["image"] += [image]
     dict["link"] += [link.getText()]
 
-#breakpoint()
-#print(dict)
+# Read dictionary to dataframe
 df = pandas.DataFrame(data=dict)
 
-# Convert dictionary to JSON string
+# Convert dataframe to JSON string
 df.to_json('2dbz_posts.json', indent=3, orient='records')
 
 # Open the JSON file
